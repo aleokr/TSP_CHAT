@@ -12,7 +12,9 @@ class ChatServer
 {	
 	static String userLogin;
 	static String userPassword;
+	static String friendLogin;
 	static boolean correct=false;
+	static boolean connect=false;
 	static int number_of_user;
 	static ArrayList <User> list_of_users;
     public static int port = 13000;//port servera
@@ -24,6 +26,11 @@ class ChatServer
         System.out.println("server: Waiting for client to connect");
         Socket csock = sock.accept();//odczytuje adres IP ziomka który się z nim łączy
         System.out.println("server: Connection established");
+        BufferedReader csock_br = new BufferedReader(new InputStreamReader(csock.getInputStream()));
+        PrintWriter csock_pw = new PrintWriter(csock.getOutputStream(), true);//możliwość wysyłania wiadomości
+        
+        Thread chat_server_writer = new ChatWriter("chat_server_writer", csock_pw, con_br);//tworzy nowy watek pisania 
+        chat_server_writer.start();//uruchamia wątek
         System.out.println("server: Enter your login ");
         userLogin=con_br.readLine();
         System.out.println("server: Enter your password ");
@@ -42,19 +49,25 @@ class ChatServer
         if(correct==true) {
         	list_of_users.get(number_of_user).log_in=true;
         	System.out.println("Enter your friend login");
-        	
-        	BufferedReader csock_br = new BufferedReader(new InputStreamReader(csock.getInputStream()));
-            PrintWriter csock_pw = new PrintWriter(csock.getOutputStream(), true);//możliwość wysyłania wiadomości
-            
-            Thread chat_server_writer = new ChatWriter("chat_server_writer", csock_pw, con_br);//tworzy nowy watek pisania 
-            chat_server_writer.start();//uruchamia wątek
-
+        	friendLogin=con_br.readLine();
+        	for(int i=0; i<list_of_users.get(number_of_user).list_of_friends.size(); ++i) {
+            	if(list_of_users.get(number_of_user).list_of_friends.get(i).login==friendLogin) {
+            		if (list_of_users.get(number_of_user).list_of_friends.get(i).log_in==true) {
+            			System.out.println("Connect");
+            			connect=true;
+            		}else {
+            			System.out.println("This user is not your friend or he/she is logout");
+            		}
+            	}
+            }
+        	if(connect==true) {
             String s;
             while((s = csock_br.readLine()) != null)
             {
                 System.out.println("\rclient: " + s);//wypisywanie w konsoli rozmowy
                 System.out.print("> ");
             }
+        	}
         }
         
 
